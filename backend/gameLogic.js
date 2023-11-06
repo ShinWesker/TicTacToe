@@ -28,9 +28,8 @@ function checkForWinner(gameBoard) {
     return isBoardFull ? 'D' : null;  // 'D' für Unentschieden (Draw)
   }
   
-  // Überprüft, ob der angegebene Zug gültig ist (Feld ist leer und es ist der richtige Spieler am Zug)
-  function isValidMove(gameBoard, index, currentTurn) {
-    return gameBoard[index] === '' && currentTurn === gameBoard[index];
+  function isValidMove(gameBoard, index) {
+    return gameBoard[index] === '';
   }
   
   // Aktualisiert den Spieler, der als nächstes am Zug ist

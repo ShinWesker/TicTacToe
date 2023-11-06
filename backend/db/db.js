@@ -11,7 +11,6 @@ const db = new sqlite3.Database(DBSOURCE, sqlite3.OPEN_READWRITE | sqlite3.OPEN_
   }
 });
 
-db.run = promisify(db.run);
 db.get = promisify(db.get);
 db.all = promisify(db.all);
 db.close = promisify(db.close);
@@ -34,19 +33,57 @@ async function initDb() {
   }
 }
 
+function run(sql, params) {
+  return new Promise((resolve, reject) => {
+    db.run(sql, params, function (err) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve({ lastID: this.lastID, changes: this.changes });
+      }
+    });
+  });
+}
+
 // CRUD Funktionen
 
-// Neue Spiel erstellen
-async function createGame(player1, player2) {
+//Neues Spiel erstellen
+async function createGame(player1) {
   const gameBoard = JSON.stringify(['', '', '', '', '', '', '', '', '']);
-  const sql = `INSERT INTO game_state (player1, player2, current_turn, game_board) VALUES (?, ?, 'X', ?)`;
+  const sql = `INSERT INTO game_state (player1, current_turn, game_board) VALUES (?, 'X', ?)`;
   try {
-    const { lastID } = await db.run(sql, [player1, player2, gameBoard]);
-    return { id: lastID, player1, player2, current_turn: 'X', game_board: gameBoard };
+    const { lastID } = await run(sql, [player1, gameBoard]);
+    return { id: lastID, player1, current_turn: 'X', game_board: gameBoard };
   } catch (err) {
     throw err;
   }
 }
+
+// Spieler zu einem bestehenden Spiel hinzufügen
+async function joinGame(id, player2) {
+  // Check for valid input
+  if (!id || !player2) {
+    throw new Error('Invalid game ID or player name.');
+  }
+
+  const sql = `UPDATE game_state SET player2 = ? WHERE id = ? AND player2 IS NULL`;
+  
+  try {
+    const result = await db.run(sql, [player2, id]);
+    const changes = result.changes;
+
+    if (changes > 0) {
+      return { id, player2 };
+    } else {
+      return { error: 'Game not found or already has a second player.' };
+    }
+  } catch (err) {
+    // Log the error for debugging purposes
+    console.error(err);
+    throw new Error('An error occurred while joining the game.');
+  }
+}
+
 
 // Spielzustand abrufen
 async function getGameState() {
@@ -80,4 +117,4 @@ async function resetGame(id) {
   }
 }
 
-module.exports = { createGame, getGameState, updateGame, resetGame };
+module.exports = {initDb, createGame, getGameState, updateGame, resetGame, joinGame };

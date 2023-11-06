@@ -6,10 +6,24 @@ const gameLogic = require('../gameLogic'); // Pfad anpassen, wo Sie die gameLogi
 // Spiel erstellen
 router.post('/game', async (req, res) => {
   try {
-    const { player1, player2 } = req.body;
-    const newGame = await db.createGame(player1, player2);
+    const { player1 } = req.body;
+    const newGame = await db.createGame(player1);
     res.status(201).json(newGame);
   } catch (error) {
+    console.error(error)
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Spiel beitreten
+router.post('/game/:id/join', async (req, res) => {
+  try {
+    const { player2 } = req.body;
+    const { id } = req.params;
+    const result = await db.joinGame(id, player2);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error(error)
     res.status(500).json({ error: error.message });
   }
 });
@@ -24,6 +38,7 @@ router.get('/game', async (req, res) => {
       res.status(404).json({ message: 'No game state found.' });
     }
   } catch (error) {
+    console.error(error)
     res.status(500).json({ error: error.message });
   }
 });
@@ -57,6 +72,7 @@ router.put('/game/:id', async (req, res) => {
 
     res.json(updatedGame);
   } catch (error) {
+    console.error(error)
     res.status(500).json({ error: error.message });
   }
 });
